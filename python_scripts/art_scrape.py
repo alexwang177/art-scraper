@@ -8,10 +8,17 @@ import time
 import os
 import sys
 
+sleep_between_interactions = 1
+
 
 def scrape_christies():
-    # load the page
-    wd.get("https://www.christies.com/en/results")
+
+    base_url = "https://www.christies.com/en/results?"
+
+    for year in range(1998, 2022):
+        for month in range(1, 13):
+            wd.get(f"{base_url}month={month}&year={year}")
+            time.sleep(sleep_between_interactions)
 
 
 CHROMEDRIVER_PATH = "./drivers/chromedriver"
