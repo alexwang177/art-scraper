@@ -67,12 +67,14 @@ def wait_for_elements(wait):
         print(f"wait exception: {e}")
 
 
-def get_auction_title(wait):
+def get_auction_title(wd):
     try:
-        auction_title_element = wait.until(
-            EC.presence_of_element_located(
-                (By.CSS_SELECTOR, ".chr-auction-header__auction-title"))
-        )
+        # auction_title_element = wait.until(
+        #     EC.presence_of_element_located(
+        #         (By.CSS_SELECTOR, ".chr-auction-header__auction-title"))
+        # )
+        auction_title_element = wd.find_element_by_css_selector(
+            ".chr-auction-header__auction-title")
 
         return auction_title_element.text.lower()
     except Exception as e:
@@ -80,12 +82,15 @@ def get_auction_title(wait):
         return None
 
 
-def get_piece_titles(wait):
+def get_piece_titles(wd):
     try:
-        title_elements = wait.until(
-            EC.presence_of_all_elements_located(
-                (By.XPATH, "//div[@class='chr-lot-tile__primary-tile']"))
-        )
+        # title_elements = wait.until(
+        #     EC.presence_of_all_elements_located(
+        #         (By.XPATH, "//*[@class='chr-lot-tile__primary-title']"))
+        # )
+
+        title_elements = wd.find_elements_by_xpath(
+            "//*[@class='chr-lot-tile__primary-title']")
 
         return [e.text.lower().strip() for e in title_elements]
 
@@ -97,12 +102,15 @@ def get_piece_titles(wait):
         return []
 
 
-def get_num_lots(wait):
+def get_num_lots(wd):
     try:
-        lot_num_text = wait.until(
-            EC.presence_of_element_located(
-                (By.CSS_SELECTOR, '[data-title="Browse Lots"], [data-track="page_nav|lots"]'))
-        ).text
+        # lot_num_text = wait.until(
+        #     EC.presence_of_element_located(
+        #         (By.CSS_SELECTOR, '[data-title="Browse Lots"], [data-track="page_nav|lots"]'))
+        # ).text
+
+        lot_num_text = wd.find_element_by_css_selector(
+            '[data-title="Browse Lots"], [data-track="page_nav|lots"]').text
 
         return int(''.join(c for c in lot_num_text if c.isdigit()))
     except Exception as e:
@@ -110,7 +118,7 @@ def get_num_lots(wait):
         return 0
 
 
-def scrape_auction(wd, wait, link, keyword_dict):
+def scrape_auction(wd, link, keyword_dict):
     wd.get(link)
     time.sleep(1)
 
@@ -119,13 +127,13 @@ def scrape_auction(wd, wait, link, keyword_dict):
 
     asian_piece_count = 0
 
-    auction_title = get_auction_title(wait)
+    auction_title = get_auction_title(wd)
     print(f"\nAuction Title: {auction_title}")
 
-    piece_titles = get_piece_titles(wait)
+    piece_titles = get_piece_titles(wd)
     print(piece_titles)
 
-    num_lots = get_num_lots(wait)
+    num_lots = get_num_lots(wd)
     print(f"\nNum Lots: {num_lots}")
 
     super_keyword_set = set()
@@ -154,7 +162,7 @@ def scrape_auction(wd, wait, link, keyword_dict):
     return asian_piece_count
 
 
-def scrape_auctions(wd, wait, auction_links, keyword_dict):
+def scrape_auctions(wd, auction_links, keyword_dict):
 
     asian_piece_count = 0
 
@@ -162,7 +170,7 @@ def scrape_auctions(wd, wait, auction_links, keyword_dict):
 
         print(link)
 
-        asian_piece_count += scrape_auction(wd, wait, link, keyword_dict)
+        asian_piece_count += scrape_auction(wd, link, keyword_dict)
         print(keyword_dict)
 
     return asian_piece_count
@@ -192,20 +200,23 @@ def scrape_christies(year):
         accept_cookies()
         close_signup()
 
-        wait = WebDriverWait(wd, 5)
+        wd.implicitly_wait(5)
 
         try:
-            auction_link_elements = wait.until(
-                EC.presence_of_all_elements_located(
-                    (By.CSS_SELECTOR, ".chr-event-tile__title"))
-            )
+            # auction_link_elements = wait.until(
+            #     EC.presence_of_all_elements_located(
+            #         (By.CSS_SELECTOR, ".chr-event-tile__title"))
+            # )
+
+            auction_link_elements = wd.find_elements_by_css_selector(
+                ".chr-event-tile__title")
 
             auction_links = [e.get_attribute('href')
                              for e in auction_link_elements]
 
             print(auction_links)
 
-            asian_piece_count += scrape_auctions(wd, wait,
+            asian_piece_count += scrape_auctions(wd,
                                                  auction_links, keyword_dict)
 
             print(asian_piece_count)
