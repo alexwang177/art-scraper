@@ -10,8 +10,6 @@ import time
 import os
 import sys
 
-sleep_between_interactions = 5
-
 
 def accept_cookies():
     try:
@@ -32,16 +30,27 @@ def close_signup():
 
 
 def scrape_auction(wd, link):
-
     wd.get(link)
-    time.sleep(3)
+
+    try:
+        _ = WebDriverWait(wd, 5).until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, ".chr-lot-tile__link"))
+        )
+
+        piece_titles = [e.text for e in wd.find_elements_by_css_selector(
+            ".chr-lot-tile__link")]
+
+        print(piece_titles)
+
+    except Exception as e:
+        print(e)
 
 
 def scrape_auctions(wd, auction_links):
 
     for link in auction_links:
         scrape_auction(wd, link)
-        time.sleep(1)
 
 
 def scrape_christies():
@@ -56,7 +65,7 @@ def scrape_christies():
             close_signup()
 
             try:
-                _ = WebDriverWait(wd, 10).until(
+                _ = WebDriverWait(wd, 5).until(
                     EC.presence_of_element_located(
                         (By.CSS_SELECTOR, ".chr-event-tile__title"))
                 )
@@ -68,8 +77,6 @@ def scrape_christies():
 
             except Exception as e:
                 print(f"{e} for year {year} and month {month}")
-
-            # time.sleep(sleep_between_interactions)
 
 
 CHROMEDRIVER_PATH = "./drivers/chromedriver"
@@ -84,4 +91,4 @@ try:
 except Exception as e:
     print(e)
 
-# wd.quit()
+wd.quit()
