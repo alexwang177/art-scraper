@@ -3,6 +3,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 import requests
 import hashlib
 import io
@@ -51,56 +52,72 @@ def scroll_to_bottom(wd):
     wd.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
 
-def get_auction_title(wait):
+def wait_for_elements(wait):
     try:
         wait.until(
+            lambda wd:
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, ".chr-auction-header__auction-title")) and
+                EC.presence_of_all_elements_located(
+                    (By.CSS_SELECTOR, ".chr-lot-tile__link")) and
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, '[data-title="Browse Lots"], [data-track="page_nav|lots"]'))
+        )
+    except Exception as e:
+        print(f"wait exception: {e}")
+
+
+def get_auction_title(wait):
+    try:
+        auction_title_element = wait.until(
             EC.presence_of_element_located(
                 (By.CSS_SELECTOR, ".chr-auction-header__auction-title"))
         )
 
-        return wd.find_element_by_css_selector(
-            ".chr-auction-header__auction-title").text.lower()
+        return auction_title_element.text.lower()
     except Exception as e:
-        print(e)
+        print(f"auction title error: {e}")
         return None
 
 
 def get_piece_titles(wait):
     try:
-        wait.until(
-            EC.presence_of_element_located(
-                (By.CSS_SELECTOR, ".chr-lot-tile__link"))
+        title_elements = wait.until(
+            EC.presence_of_all_elements_located(
+                (By.XPATH, "//div[@class='chr-lot-tile__primary-tile']"))
         )
 
-        return [e.text.lower().strip() for e in wd.find_elements_by_css_selector(
-            ".chr-lot-tile__link")]
-    except Exception as e:
-        print(e)
-        return None
+        return [e.text.lower().strip() for e in title_elements]
+
+    except TimeoutException as e:
+        print(f"piece titles error {e}")
+        return []
+    except NoSuchElementException as e:
+        print(f"piece titles error {e}")
+        return []
 
 
 def get_num_lots(wait):
     try:
-        wait.until(
+        lot_num_text = wait.until(
             EC.presence_of_element_located(
                 (By.CSS_SELECTOR, '[data-title="Browse Lots"], [data-track="page_nav|lots"]'))
-        )
-
-        lot_num_text = wd.find_element_by_css_selector(
-            '[data-title="Browse Lots"], [data-track="page_nav|lots"]')
+        ).text
 
         return int(''.join(c for c in lot_num_text if c.isdigit()))
     except Exception as e:
-        print(e)
-        return None
+        print(f"num lots error {e}")
+        return 0
 
 
-def scrape_auction(wd, link, keyword_dict):
+def scrape_auction(wd, wait, link, keyword_dict):
     wd.get(link)
     time.sleep(1)
 
+    accept_cookies()
+    close_signup()
+
     asian_piece_count = 0
-    wait = WebDriverWait(wd, 5)
 
     auction_title = get_auction_title(wait)
     print(f"\nAuction Title: {auction_title}")
@@ -109,7 +126,7 @@ def scrape_auction(wd, link, keyword_dict):
     print(piece_titles)
 
     num_lots = get_num_lots(wait)
-    print(num_lots)
+    print(f"\nNum Lots: {num_lots}")
 
     super_keyword_set = set()
 
@@ -137,16 +154,15 @@ def scrape_auction(wd, link, keyword_dict):
     return asian_piece_count
 
 
-def scrape_auctions(wd, auction_links, keyword_dict):
+def scrape_auctions(wd, wait, auction_links, keyword_dict):
 
     asian_piece_count = 0
 
     for link in auction_links:
 
-        accept_cookies()
-        close_signup()
+        print(link)
 
-        asian_piece_count += scrape_auction(wd, link, keyword_dict)
+        asian_piece_count += scrape_auction(wd, wait, link, keyword_dict)
         print(keyword_dict)
 
     return asian_piece_count
@@ -176,16 +192,20 @@ def scrape_christies(year):
         accept_cookies()
         close_signup()
 
+        wait = WebDriverWait(wd, 5)
+
         try:
-            _ = WebDriverWait(wd, 5).until(
-                EC.presence_of_element_located(
+            auction_link_elements = wait.until(
+                EC.presence_of_all_elements_located(
                     (By.CSS_SELECTOR, ".chr-event-tile__title"))
             )
 
-            auction_links = [e.get_attribute('href') for e in wd.find_elements_by_css_selector(
-                ".chr-event-tile__title")]
+            auction_links = [e.get_attribute('href')
+                             for e in auction_link_elements]
 
-            asian_piece_count += scrape_auctions(wd,
+            print(auction_links)
+
+            asian_piece_count += scrape_auctions(wd, wait,
                                                  auction_links, keyword_dict)
 
             print(asian_piece_count)
