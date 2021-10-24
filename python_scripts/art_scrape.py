@@ -35,19 +35,42 @@ def scrape_auction(wd, link, keyword_dict):
     asian_piece_count = 0
 
     try:
-        _ = WebDriverWait(wd, 5).until(
+        _ = WebDriverWait(wd, 3).until(
             EC.presence_of_element_located(
-                (By.CSS_SELECTOR, ".chr-lot-tile__link"))
+                (By.CSS_SELECTOR, ".chr-auction-header__auction-title"))
         )
+
+        auction_title = wd.find_element_by_css_selector(
+            ".chr-auction-header__auction-title").text.lower()
+
+        print(f"\nAuction Title: {auction_title}")
+
+        # _ = WebDriverWait(wd, 3).until(
+        #     EC.presence_of_element_located(
+        #         (By.CSS_SELECTOR, ".chr-lot-tile__link"))
+        # )
 
         piece_titles = [e.text.lower() for e in wd.find_elements_by_css_selector(
             ".chr-lot-tile__link")]
+
+        super_keyword_set = set()
+
+        for keyword in keyword_dict:
+
+            if keyword in auction_title:
+
+                keyword_dict[keyword] += len(piece_titles)
+                super_keyword_set.add(keyword)
+                print("SPECIAL!!!")
 
         for title in piece_titles:
 
             match = False
 
             for keyword in keyword_dict:
+
+                if keyword in super_keyword_set:
+                    continue
 
                 if keyword in title:
                     match = True
@@ -67,6 +90,10 @@ def scrape_auctions(wd, auction_links, keyword_dict):
     asian_piece_count = 0
 
     for link in auction_links:
+
+        accept_cookies()
+        close_signup()
+
         asian_piece_count += scrape_auction(wd, link, keyword_dict)
         print(keyword_dict)
 
@@ -74,13 +101,24 @@ def scrape_auctions(wd, auction_links, keyword_dict):
 
 
 def scrape_christies(year):
-    keyword_dict = {"chinese": 0, "korean": 0,
-                    "japanese": 0, "oriental": 0, "dynasty": 0}
+    keyword_dict = {"chinese": 0,
+                    "china": 0,
+                    "korean": 0,
+                    "korea": 0,
+                    "japanese": 0,
+                    "japan": 0,
+                    "orient": 0,
+                    "dynasty": 0,
+                    "asian": 0,
+                    "asia": 0}
     asian_piece_count = 0
 
     base_url = "https://www.christies.com/en/results?"
 
     for month in range(1, 13):
+
+        print(F"\nMONTH {month}\n")
+
         wd.get(f"{base_url}month={month}&year={year}")
 
         accept_cookies()
