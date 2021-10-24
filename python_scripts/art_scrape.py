@@ -31,24 +31,6 @@ def close_signup():
 
 
 def scroll_to_bottom(wd):
-
-    # SCROLL_PAUSE_TIME = 5
-
-    # # Get scroll height
-    # last_height = wd.execute_script("return document.body.scrollHeight")
-
-    # while True:
-    #     # Scroll down to get more pieces
-    #     wd.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-
-    #     # Wait to load page
-    #     time.sleep(SCROLL_PAUSE_TIME)
-
-    #     # Calculate new scroll height and compare with last scroll height
-    #     new_height = wd.execute_script("return document.body.scrollHeight")
-    #     if new_height == last_height:
-    #         break
-    #     last_height = new_height
     wd.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
 
@@ -69,10 +51,6 @@ def wait_for_elements(wait):
 
 def get_auction_title(wd):
     try:
-        # auction_title_element = wait.until(
-        #     EC.presence_of_element_located(
-        #         (By.CSS_SELECTOR, ".chr-auction-header__auction-title"))
-        # )
         auction_title_element = wd.find_element_by_css_selector(
             ".chr-auction-header__auction-title")
 
@@ -84,11 +62,6 @@ def get_auction_title(wd):
 
 def get_piece_titles(wd):
     try:
-        # title_elements = wait.until(
-        #     EC.presence_of_all_elements_located(
-        #         (By.XPATH, "//*[@class='chr-lot-tile__primary-title']"))
-        # )
-
         title_elements = wd.find_elements_by_xpath(
             "//*[@class='chr-lot-tile__primary-title']")
 
@@ -104,11 +77,6 @@ def get_piece_titles(wd):
 
 def get_num_lots(wd):
     try:
-        # lot_num_text = wait.until(
-        #     EC.presence_of_element_located(
-        #         (By.CSS_SELECTOR, '[data-title="Browse Lots"], [data-track="page_nav|lots"]'))
-        # ).text
-
         lot_num_text = wd.find_element_by_css_selector(
             '[data-title="Browse Lots"], [data-track="page_nav|lots"]').text
 
@@ -125,6 +93,7 @@ def scrape_auction(wd, link, keyword_dict):
     accept_cookies()
     close_signup()
     scroll_to_bottom(wd)
+    time.sleep(1)
 
     asian_piece_count = 0
 
@@ -163,21 +132,23 @@ def scrape_auction(wd, link, keyword_dict):
         if match:
             asian_piece_count += 1
 
-    return asian_piece_count
+    return (asian_piece_count, num_lots)
 
 
 def scrape_auctions(wd, auction_links, keyword_dict):
 
     asian_piece_count = 0
+    total_piece_count = 0
 
     for link in auction_links:
 
-        print(link)
+        result = scrape_auction(wd, link, keyword_dict)
+        asian_piece_count += result[0]
+        total_piece_count += result[1]
 
-        asian_piece_count += scrape_auction(wd, link, keyword_dict)
         print(keyword_dict)
 
-    return asian_piece_count
+    return (asian_piece_count, total_piece_count)
 
 
 def scrape_christies(year):
@@ -191,11 +162,16 @@ def scrape_christies(year):
                     "dynasty": 0,
                     "asian": 0,
                     "asia": 0}
-    asian_piece_count = 0
+
+    result_dict = {
+        "asian_piece_count": 0,
+        "total_piece_count": 0,
+        "ratio": 0.0,
+    }
 
     base_url = "https://www.christies.com/en/results?"
 
-    for month in range(1, 13):
+    for month in range(1, 2):
 
         print(F"\nMONTH {month}\n")
 
@@ -207,21 +183,21 @@ def scrape_christies(year):
         wd.implicitly_wait(5)
 
         try:
-            # auction_link_elements = wait.until(
-            #     EC.presence_of_all_elements_located(
-            #         (By.CSS_SELECTOR, ".chr-event-tile__title"))
-            # )
-
             auction_link_elements = wd.find_elements_by_css_selector(
                 ".chr-event-tile__title")
 
             auction_links = [e.get_attribute('href')
                              for e in auction_link_elements]
 
-            asian_piece_count += scrape_auctions(wd,
-                                                 auction_links, keyword_dict)
+            result = scrape_auctions(wd,
+                                     auction_links, keyword_dict)
 
-            print(asian_piece_count)
+            result_dict["asian_piece_count"] += result[0]
+            result_dict["total_piece_count"] += result[1]
+            result_dict["ratio"] = result_dict["asian_piece_count"] / \
+                result_dict["total_piece_count"]
+
+            print(result_dict)
             print(keyword_dict)
 
         except Exception as e:
@@ -232,6 +208,7 @@ CHROMEDRIVER_PATH = "./drivers/chromedriver"
 chrome_bin = os.environ.get("GOOGLE_CHROME_BIN", "chromedriver")
 options = webdriver.ChromeOptions()
 options.binary_location = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+options.add_argument("--headless")
 wd = webdriver.Chrome(executable_path=CHROMEDRIVER_PATH,
                       options=options)
 
