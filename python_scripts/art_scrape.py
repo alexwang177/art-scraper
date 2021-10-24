@@ -88,12 +88,10 @@ def get_num_lots(wd):
 
 def scrape_auction(wd, link, keyword_dict):
     wd.get(link)
-    time.sleep(1)
 
     accept_cookies()
     close_signup()
     scroll_to_bottom(wd)
-    time.sleep(1)
 
     asian_piece_count = 0
 
@@ -180,7 +178,7 @@ def scrape_christies(year):
         accept_cookies()
         close_signup()
 
-        wd.implicitly_wait(5)
+        wd.implicitly_wait(1)
 
         try:
             auction_link_elements = wd.find_elements_by_css_selector(
