@@ -124,6 +124,7 @@ def scrape_auction(wd, link, keyword_dict):
 
     accept_cookies()
     close_signup()
+    scroll_to_bottom(wd)
 
     asian_piece_count = 0
 
@@ -131,7 +132,7 @@ def scrape_auction(wd, link, keyword_dict):
     print(f"\nAuction Title: {auction_title}")
 
     piece_titles = get_piece_titles(wd)
-    print(piece_titles)
+    print(f"\nPiece Title: {len(piece_titles)}")
 
     num_lots = get_num_lots(wd)
     print(f"\nNum Lots: {num_lots}")
