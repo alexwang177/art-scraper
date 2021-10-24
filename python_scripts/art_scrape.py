@@ -79,7 +79,7 @@ def get_auction_title(wd):
         return auction_title_element.text.lower()
     except Exception as e:
         print(f"auction title error: {e}")
-        return None
+        return ""
 
 
 def get_piece_titles(wd):
@@ -150,7 +150,10 @@ def scrape_auction(wd, link, keyword_dict):
 
         match = False
 
-        for keyword in keyword_dict and keyword not in super_keyword_set:
+        for keyword in keyword_dict:
+
+            if keyword in super_keyword_set:
+                continue
 
             if keyword in title:
                 match = True
@@ -213,8 +216,6 @@ def scrape_christies(year):
 
             auction_links = [e.get_attribute('href')
                              for e in auction_link_elements]
-
-            print(auction_links)
 
             asian_piece_count += scrape_auctions(wd,
                                                  auction_links, keyword_dict)
