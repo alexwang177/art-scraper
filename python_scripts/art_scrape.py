@@ -29,13 +29,37 @@ def close_signup():
         pass
 
 
+def scroll_to_bottom(wd):
+
+    # SCROLL_PAUSE_TIME = 5
+
+    # # Get scroll height
+    # last_height = wd.execute_script("return document.body.scrollHeight")
+
+    # while True:
+    #     # Scroll down to get more pieces
+    #     wd.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+    #     # Wait to load page
+    #     time.sleep(SCROLL_PAUSE_TIME)
+
+    #     # Calculate new scroll height and compare with last scroll height
+    #     new_height = wd.execute_script("return document.body.scrollHeight")
+    #     if new_height == last_height:
+    #         break
+    #     last_height = new_height
+    wd.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+
 def scrape_auction(wd, link, keyword_dict):
     wd.get(link)
+    time.sleep(1)
+    # scroll_to_bottom(wd)
 
     asian_piece_count = 0
 
     try:
-        _ = WebDriverWait(wd, 3).until(
+        _ = WebDriverWait(wd, 5).until(
             EC.presence_of_element_located(
                 (By.CSS_SELECTOR, ".chr-auction-header__auction-title"))
         )
@@ -45,13 +69,24 @@ def scrape_auction(wd, link, keyword_dict):
 
         print(f"\nAuction Title: {auction_title}")
 
-        # _ = WebDriverWait(wd, 3).until(
-        #     EC.presence_of_element_located(
-        #         (By.CSS_SELECTOR, ".chr-lot-tile__link"))
-        # )
+        _ = WebDriverWait(wd, 5).until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, ".chr-lot-tile__link"))
+        )
 
-        piece_titles = [e.text.lower() for e in wd.find_elements_by_css_selector(
+        piece_titles = [e.text.lower().strip() for e in wd.find_elements_by_css_selector(
             ".chr-lot-tile__link")]
+
+        print(piece_titles)
+
+        lot_num_text = WebDriverWait(wd, 10).until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, '[data-title="Browse Lots"], [data-track="page_nav|lots"]'))
+        ).text
+
+        num_lots = int(''.join(c for c in lot_num_text if c.isdigit()))
+
+        print(num_lots)
 
         super_keyword_set = set()
 
@@ -59,7 +94,7 @@ def scrape_auction(wd, link, keyword_dict):
 
             if keyword in auction_title:
 
-                keyword_dict[keyword] += len(piece_titles)
+                keyword_dict[keyword] += num_lots
                 super_keyword_set.add(keyword)
                 print("SPECIAL!!!")
 
@@ -67,10 +102,7 @@ def scrape_auction(wd, link, keyword_dict):
 
             match = False
 
-            for keyword in keyword_dict:
-
-                if keyword in super_keyword_set:
-                    continue
+            for keyword in keyword_dict and keyword not in super_keyword_set:
 
                 if keyword in title:
                     match = True
