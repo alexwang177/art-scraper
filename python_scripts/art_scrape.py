@@ -29,8 +29,10 @@ def close_signup():
         pass
 
 
-def scrape_auction(wd, link):
+def scrape_auction(wd, link, keyword_dict):
     wd.get(link)
+
+    asian_piece_count = 0
 
     try:
         _ = WebDriverWait(wd, 5).until(
@@ -38,45 +40,69 @@ def scrape_auction(wd, link):
                 (By.CSS_SELECTOR, ".chr-lot-tile__link"))
         )
 
-        piece_titles = [e.text for e in wd.find_elements_by_css_selector(
+        piece_titles = [e.text.lower() for e in wd.find_elements_by_css_selector(
             ".chr-lot-tile__link")]
 
-        print(piece_titles)
+        for title in piece_titles:
+
+            match = False
+
+            for keyword in keyword_dict:
+
+                if keyword in title:
+                    match = True
+                    keyword_dict[keyword] += 1
+
+            if match:
+                asian_piece_count += 1
 
     except Exception as e:
         print(e)
 
+    return asian_piece_count
 
-def scrape_auctions(wd, auction_links):
+
+def scrape_auctions(wd, auction_links, keyword_dict):
+
+    asian_piece_count = 0
 
     for link in auction_links:
-        scrape_auction(wd, link)
+        asian_piece_count += scrape_auction(wd, link, keyword_dict)
+        print(keyword_dict)
+
+    return asian_piece_count
 
 
-def scrape_christies():
+def scrape_christies(year):
+    keyword_dict = {"chinese": 0, "korean": 0,
+                    "japanese": 0, "oriental": 0, "dynasty": 0}
+    asian_piece_count = 0
 
     base_url = "https://www.christies.com/en/results?"
 
-    for year in range(1998, 2022):
-        for month in range(1, 13):
-            wd.get(f"{base_url}month={month}&year={year}")
+    for month in range(1, 13):
+        wd.get(f"{base_url}month={month}&year={year}")
 
-            accept_cookies()
-            close_signup()
+        accept_cookies()
+        close_signup()
 
-            try:
-                _ = WebDriverWait(wd, 5).until(
-                    EC.presence_of_element_located(
-                        (By.CSS_SELECTOR, ".chr-event-tile__title"))
-                )
+        try:
+            _ = WebDriverWait(wd, 5).until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, ".chr-event-tile__title"))
+            )
 
-                auction_links = [e.get_attribute('href') for e in wd.find_elements_by_css_selector(
-                    ".chr-event-tile__title")]
+            auction_links = [e.get_attribute('href') for e in wd.find_elements_by_css_selector(
+                ".chr-event-tile__title")]
 
-                scrape_auctions(wd, auction_links)
+            asian_piece_count += scrape_auctions(wd,
+                                                 auction_links, keyword_dict)
 
-            except Exception as e:
-                print(f"{e} for year {year} and month {month}")
+            print(asian_piece_count)
+            print(keyword_dict)
+
+        except Exception as e:
+            print(f"{e} for year {year} and month {month}")
 
 
 CHROMEDRIVER_PATH = "./drivers/chromedriver"
@@ -87,7 +113,7 @@ wd = webdriver.Chrome(executable_path=CHROMEDRIVER_PATH,
                       options=options)
 
 try:
-    scrape_christies()
+    scrape_christies(sys.argv[1])
 except Exception as e:
     print(e)
 
