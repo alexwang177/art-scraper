@@ -51,68 +51,88 @@ def scroll_to_bottom(wd):
     wd.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
 
-def scrape_auction(wd, link, keyword_dict):
-    wd.get(link)
-    time.sleep(1)
-    # scroll_to_bottom(wd)
-
-    asian_piece_count = 0
-
+def get_auction_title(wait):
     try:
-        _ = WebDriverWait(wd, 5).until(
+        wait.until(
             EC.presence_of_element_located(
                 (By.CSS_SELECTOR, ".chr-auction-header__auction-title"))
         )
 
-        auction_title = wd.find_element_by_css_selector(
+        return wd.find_element_by_css_selector(
             ".chr-auction-header__auction-title").text.lower()
+    except Exception as e:
+        print(e)
+        return None
 
-        print(f"\nAuction Title: {auction_title}")
 
-        _ = WebDriverWait(wd, 5).until(
+def get_piece_titles(wait):
+    try:
+        wait.until(
             EC.presence_of_element_located(
                 (By.CSS_SELECTOR, ".chr-lot-tile__link"))
         )
 
-        piece_titles = [e.text.lower().strip() for e in wd.find_elements_by_css_selector(
+        return [e.text.lower().strip() for e in wd.find_elements_by_css_selector(
             ".chr-lot-tile__link")]
-
-        print(piece_titles)
-
-        lot_num_text = WebDriverWait(wd, 10).until(
-            EC.presence_of_element_located(
-                (By.CSS_SELECTOR, '[data-title="Browse Lots"], [data-track="page_nav|lots"]'))
-        ).text
-
-        num_lots = int(''.join(c for c in lot_num_text if c.isdigit()))
-
-        print(num_lots)
-
-        super_keyword_set = set()
-
-        for keyword in keyword_dict:
-
-            if keyword in auction_title:
-
-                keyword_dict[keyword] += num_lots
-                super_keyword_set.add(keyword)
-                print("SPECIAL!!!")
-
-        for title in piece_titles:
-
-            match = False
-
-            for keyword in keyword_dict and keyword not in super_keyword_set:
-
-                if keyword in title:
-                    match = True
-                    keyword_dict[keyword] += 1
-
-            if match:
-                asian_piece_count += 1
-
     except Exception as e:
         print(e)
+        return None
+
+
+def get_num_lots(wait):
+    try:
+        wait.until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, '[data-title="Browse Lots"], [data-track="page_nav|lots"]'))
+        )
+
+        lot_num_text = wd.find_element_by_css_selector(
+            '[data-title="Browse Lots"], [data-track="page_nav|lots"]')
+
+        return int(''.join(c for c in lot_num_text if c.isdigit()))
+    except Exception as e:
+        print(e)
+        return None
+
+
+def scrape_auction(wd, link, keyword_dict):
+    wd.get(link)
+    time.sleep(1)
+
+    asian_piece_count = 0
+    wait = WebDriverWait(wd, 5)
+
+    auction_title = get_auction_title(wait)
+    print(f"\nAuction Title: {auction_title}")
+
+    piece_titles = get_piece_titles(wait)
+    print(piece_titles)
+
+    num_lots = get_num_lots(wait)
+    print(num_lots)
+
+    super_keyword_set = set()
+
+    for keyword in keyword_dict:
+
+        if keyword in auction_title:
+
+            keyword_dict[keyword] += num_lots
+            super_keyword_set.add(keyword)
+            print("SPECIAL!!!")
+
+    for title in piece_titles:
+
+        match = False
+
+        for keyword in keyword_dict and keyword not in super_keyword_set:
+
+            if keyword in title:
+                match = True
+                keyword_dict[keyword] += 1
+
+        if match:
+            asian_piece_count += 1
 
     return asian_piece_count
 
