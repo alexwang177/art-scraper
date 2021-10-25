@@ -209,13 +209,13 @@ def scrape_christies(year):
         except Exception as e:
             print(f"{e} for year {year} and month {month}")
 
-    filename = "christies_auction_keywords_new.csv"
+    filename = "new_christies_auction_keywords.csv"
     fields = list(keyword_dict.keys())
     file_exists = os.path.isfile(filename)
 
     write_to_csv(filename, fields, file_exists, keyword_dict)
 
-    filename = "christies_auction_overall_new.csv"
+    filename = "new_christies_auction_overall.csv"
     fields = list(result_dict.keys())
     file_exists = os.path.isfile(filename)
 
