@@ -52,8 +52,14 @@ def wait_for_elements(wait):
 
 def get_auction_title(wd):
     try:
-        auction_title_element = wd.find_element_by_css_selector(
-            ".chr-auction-header__auction-title")
+
+        auction_title_element = WebDriverWait(wd, 5).until(
+            EC.presence_of_element_located(By.CSS_SELECTOR(
+                ".chr-auction-header__auction-title"))
+        )
+
+        # auction_title_element = wd.find_element_by_css_selector(
+        #     ".chr-auction-header__auction-title")
 
         return auction_title_element.text.lower()
     except Exception as e:
@@ -61,25 +67,30 @@ def get_auction_title(wd):
         return ""
 
 
-def get_piece_titles(wd):
-    try:
-        title_elements = wd.find_elements_by_xpath(
-            "//*[@class='chr-lot-tile__primary-title']")
+# def get_piece_titles(wd):
+#     try:
+#         title_elements = wd.find_elements_by_xpath(
+#             "//*[@class='chr-lot-tile__primary-title']")
 
-        return [e.text.lower().strip() for e in title_elements]
+#         return [e.text.lower().strip() for e in title_elements]
 
-    except TimeoutException as e:
-        print(f"piece titles error {e}")
-        return []
-    except NoSuchElementException as e:
-        print(f"piece titles error {e}")
-        return []
+#     except TimeoutException as e:
+#         print(f"piece titles error {e}")
+#         return []
+#     except NoSuchElementException as e:
+#         print(f"piece titles error {e}")
+#         return []
 
 
 def get_num_lots(wd):
     try:
-        lot_num_text = wd.find_element_by_css_selector(
-            '[data-title="Browse Lots"], [data-track="page_nav|lots"]').text
+        lot_num_text = WebDriverWait(wd, 5).until(
+            EC.presence_of_element_located(By.CSS_SELECTOR(
+                '[data-title="Browse Lots"], [data-track="page_nav|lots"]'))
+        ).text
+
+        # lot_num_text = wd.find_element_by_css_selector(
+        #     '[data-title="Browse Lots"], [data-track="page_nav|lots"]').text
 
         return int(''.join(c for c in lot_num_text if c.isdigit()))
     except Exception as e:
@@ -99,46 +110,46 @@ def scrape_auction(wd, link, keyword_dict):
     auction_title = get_auction_title(wd)
     print(f"\nAuction Title: {auction_title}")
 
-    piece_titles = get_piece_titles(wd)
-    print(f"\nPiece Title: {len(piece_titles)}")
+    # piece_titles = get_piece_titles(wd)
+    # print(f"\nPiece Title: {len(piece_titles)}")
 
     num_lots = get_num_lots(wd)
     print(f"\nNum Lots: {num_lots}")
 
-    super_keyword_set = set()
+    # super_keyword_set = set()
+
+    match = False
 
     for keyword in keyword_dict:
-
-        match = False
 
         if keyword in auction_title:
 
             match = True
 
             keyword_dict[keyword] += num_lots
-            super_keyword_set.add(keyword)
-            print("SPECIAL!!!")
+            # super_keyword_set.add(keyword)
+            # print("SPECIAL!!!")
 
-        if match:
-            asian_piece_count += num_lots
+    if match:
+        asian_piece_count += num_lots
 
-    for title in piece_titles:
+    # for title in piece_titles:
 
-        match = False
+    #     match = False
 
-        for keyword in keyword_dict:
+    #     for keyword in keyword_dict:
 
-            if keyword in super_keyword_set:
-                continue
+    #         if keyword in super_keyword_set:
+    #             continue
 
-            if keyword in title:
-                match = True
-                keyword_dict[keyword] += 1
+    #         if keyword in title:
+    #             match = True
+    #             keyword_dict[keyword] += 1
 
-        if match:
-            asian_piece_count += 1
+    #     if match:
+    #         asian_piece_count += 1
 
-    return (asian_piece_count, num_lots if super_keyword_set else len(piece_titles))
+    return (asian_piece_count, num_lots)
 
 
 def scrape_auctions(wd, auction_links, keyword_dict):
@@ -197,8 +208,6 @@ def scrape_christies(year):
 
         accept_cookies()
         close_signup()
-
-        wd.implicitly_wait(5)
 
         try:
             auction_link_elements = wd.find_elements_by_css_selector(
