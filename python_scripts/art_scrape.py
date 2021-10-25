@@ -10,6 +10,7 @@ import io
 import time
 import os
 import sys
+import csv
 
 
 def accept_cookies():
@@ -108,11 +109,18 @@ def scrape_auction(wd, link, keyword_dict):
 
     for keyword in keyword_dict:
 
+        match = False
+
         if keyword in auction_title:
+
+            match = True
 
             keyword_dict[keyword] += num_lots
             super_keyword_set.add(keyword)
             print("SPECIAL!!!")
+
+        if match:
+            asian_piece_count += num_lots
 
     for title in piece_titles:
 
@@ -130,7 +138,7 @@ def scrape_auction(wd, link, keyword_dict):
         if match:
             asian_piece_count += 1
 
-    return (asian_piece_count, num_lots)
+    return (asian_piece_count, num_lots if super_keyword_set else len(piece_titles))
 
 
 def scrape_auctions(wd, auction_links, keyword_dict):
@@ -138,13 +146,20 @@ def scrape_auctions(wd, auction_links, keyword_dict):
     asian_piece_count = 0
     total_piece_count = 0
 
+    counter = 0
+
     for link in auction_links:
+
+        if counter >= 3:
+            break
 
         result = scrape_auction(wd, link, keyword_dict)
         asian_piece_count += result[0]
         total_piece_count += result[1]
 
         print(keyword_dict)
+
+        counter += 1
 
     return (asian_piece_count, total_piece_count)
 
@@ -159,12 +174,14 @@ def scrape_christies(year):
                     "orient": 0,
                     "dynasty": 0,
                     "asian": 0,
-                    "asia": 0}
+                    "asia": 0,
+                    "year": year}
 
     result_dict = {
         "asian_piece_count": 0,
         "total_piece_count": 0,
         "ratio": 0.0,
+        "year": year,
     }
 
     base_url = "https://www.christies.com/en/results?"
@@ -178,7 +195,7 @@ def scrape_christies(year):
         accept_cookies()
         close_signup()
 
-        wd.implicitly_wait(1)
+        wd.implicitly_wait(0.5)
 
         try:
             auction_link_elements = wd.find_elements_by_css_selector(
@@ -201,12 +218,26 @@ def scrape_christies(year):
         except Exception as e:
             print(f"{e} for year {year} and month {month}")
 
+    filename = "christies_auction_keywords.csv"
+    fields = list(keyword_dict.keys())
+    file_exists = os.path.isfile(filename)
+
+    with open(filename, 'a') as csvfile:
+        # creating a csv dict writer object
+        writer = csv.DictWriter(csvfile, fieldnames=fields)
+
+        if not file_exists:
+            writer.writeheader()  # file doesn't exist yet, write a header
+
+        # writing data rows
+        writer.writerows([keyword_dict])
+
 
 CHROMEDRIVER_PATH = "./drivers/chromedriver"
 chrome_bin = os.environ.get("GOOGLE_CHROME_BIN", "chromedriver")
 options = webdriver.ChromeOptions()
 options.binary_location = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-options.add_argument("--headless")
+# options.add_argument("--headless")
 wd = webdriver.Chrome(executable_path=CHROMEDRIVER_PATH,
                       options=options)
 
