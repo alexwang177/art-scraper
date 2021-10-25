@@ -54,8 +54,8 @@ def get_auction_title(wd):
     try:
 
         auction_title_element = WebDriverWait(wd, 5).until(
-            EC.presence_of_element_located(By.CSS_SELECTOR(
-                ".chr-auction-header__auction-title"))
+            EC.presence_of_element_located((By.CSS_SELECTOR,
+                                            ".chr-auction-header__auction-title"))
         )
 
         # auction_title_element = wd.find_element_by_css_selector(
@@ -65,7 +65,6 @@ def get_auction_title(wd):
     except Exception as e:
         print(f"auction title error: {e}")
         return ""
-
 
 # def get_piece_titles(wd):
 #     try:
@@ -85,8 +84,8 @@ def get_auction_title(wd):
 def get_num_lots(wd):
     try:
         lot_num_text = WebDriverWait(wd, 5).until(
-            EC.presence_of_element_located(By.CSS_SELECTOR(
-                '[data-title="Browse Lots"], [data-track="page_nav|lots"]'))
+            EC.presence_of_element_located((By.CSS_SELECTOR,
+                                            '[data-title="Browse Lots"], [data-track="page_nav|lots"]'))
         ).text
 
         # lot_num_text = wd.find_element_by_css_selector(
@@ -157,20 +156,13 @@ def scrape_auctions(wd, auction_links, keyword_dict):
     asian_piece_count = 0
     total_piece_count = 0
 
-    counter = 0
-
     for link in auction_links:
-
-        if counter >= 3:
-            break
 
         result = scrape_auction(wd, link, keyword_dict)
         asian_piece_count += result[0]
         total_piece_count += result[1]
 
         print(keyword_dict)
-
-        counter += 1
 
     return (asian_piece_count, total_piece_count)
 
