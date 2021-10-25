@@ -165,6 +165,9 @@ def scrape_auctions(wd, auction_links, keyword_dict):
 
 
 def scrape_christies(year):
+
+    print(f"FOR YEAR {year}\n")
+
     keyword_dict = {"chinese": 0,
                     "china": 0,
                     "korean": 0,
