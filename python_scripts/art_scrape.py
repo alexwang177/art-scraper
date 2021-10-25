@@ -109,13 +109,8 @@ def scrape_auction(wd, link, keyword_dict):
     auction_title = get_auction_title(wd)
     print(f"\nAuction Title: {auction_title}")
 
-    # piece_titles = get_piece_titles(wd)
-    # print(f"\nPiece Title: {len(piece_titles)}")
-
     num_lots = get_num_lots(wd)
     print(f"\nNum Lots: {num_lots}")
-
-    # super_keyword_set = set()
 
     match = False
 
@@ -126,45 +121,29 @@ def scrape_auction(wd, link, keyword_dict):
             match = True
 
             keyword_dict[keyword] += num_lots
-            # super_keyword_set.add(keyword)
-            # print("SPECIAL!!!")
 
     if match:
         asian_piece_count += num_lots
 
-    # for title in piece_titles:
-
-    #     match = False
-
-    #     for keyword in keyword_dict:
-
-    #         if keyword in super_keyword_set:
-    #             continue
-
-    #         if keyword in title:
-    #             match = True
-    #             keyword_dict[keyword] += 1
-
-    #     if match:
-    #         asian_piece_count += 1
-
-    return (asian_piece_count, num_lots)
+    return (asian_piece_count, num_lots, 1 if match else 0)
 
 
 def scrape_auctions(wd, auction_links, keyword_dict):
 
     asian_piece_count = 0
     total_piece_count = 0
+    asian_auction_count = 0
 
     for link in auction_links:
 
         result = scrape_auction(wd, link, keyword_dict)
         asian_piece_count += result[0]
         total_piece_count += result[1]
+        asian_auction_count += result[2]
 
         print(keyword_dict)
 
-    return (asian_piece_count, total_piece_count)
+    return (asian_piece_count, total_piece_count, asian_auction_count, len(auction_links))
 
 
 def scrape_christies(year):
@@ -186,13 +165,16 @@ def scrape_christies(year):
     result_dict = {
         "asian_piece_count": 0,
         "total_piece_count": 0,
-        "ratio": 0.0,
+        "piece_ratio": 0.0,
+        "asian_auction_count": 0,
+        "total_auction_count": 0,
+        "auction_ratio": 0.0,
         "year": year,
     }
 
     base_url = "https://www.christies.com/en/results?"
 
-    for month in range(1, 13):
+    for month in range(1, 3):
 
         print(F"\nMONTH {month}\n")
 
@@ -213,8 +195,13 @@ def scrape_christies(year):
 
             result_dict["asian_piece_count"] += result[0]
             result_dict["total_piece_count"] += result[1]
-            result_dict["ratio"] = result_dict["asian_piece_count"] / \
+            result_dict["piece_ratio"] = result_dict["asian_piece_count"] / \
                 result_dict["total_piece_count"]
+
+            result_dict["asian_auction_count"] += result[2]
+            result_dict["total_auction_count"] += result[3]
+            result_dict["auction_ratio"] = result_dict["asian_auction_count"] / \
+                result_dict["total_auction_count"]
 
             print(result_dict)
             print(keyword_dict)
@@ -222,13 +209,13 @@ def scrape_christies(year):
         except Exception as e:
             print(f"{e} for year {year} and month {month}")
 
-    filename = "christies_auction_keywords.csv"
+    filename = "christies_auction_keywords_new.csv"
     fields = list(keyword_dict.keys())
     file_exists = os.path.isfile(filename)
 
     write_to_csv(filename, fields, file_exists, keyword_dict)
 
-    filename = "christies_auction_overall.csv"
+    filename = "christies_auction_overall_new.csv"
     fields = list(result_dict.keys())
     file_exists = os.path.isfile(filename)
 
