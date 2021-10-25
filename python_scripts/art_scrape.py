@@ -198,7 +198,7 @@ def scrape_christies(year):
         accept_cookies()
         close_signup()
 
-        wd.implicitly_wait(0.5)
+        wd.implicitly_wait(5)
 
         try:
             auction_link_elements = wd.find_elements_by_css_selector(
@@ -250,7 +250,7 @@ CHROMEDRIVER_PATH = "./drivers/chromedriver"
 chrome_bin = os.environ.get("GOOGLE_CHROME_BIN", "chromedriver")
 options = webdriver.ChromeOptions()
 options.binary_location = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-# options.add_argument("--headless")
+options.add_argument("--headless")
 wd = webdriver.Chrome(executable_path=CHROMEDRIVER_PATH,
                       options=options)
 
