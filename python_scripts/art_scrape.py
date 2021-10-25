@@ -186,7 +186,7 @@ def scrape_christies(year):
 
     base_url = "https://www.christies.com/en/results?"
 
-    for month in range(1, 2):
+    for month in range(1, 13):
 
         print(F"\nMONTH {month}\n")
 
@@ -222,6 +222,16 @@ def scrape_christies(year):
     fields = list(keyword_dict.keys())
     file_exists = os.path.isfile(filename)
 
+    write_to_csv(filename, fields, file_exists, keyword_dict)
+
+    filename = "christies_auction_overall.csv"
+    fields = list(result_dict.keys())
+    file_exists = os.path.isfile(filename)
+
+    write_to_csv(filename, fields, file_exists, result_dict)
+
+
+def write_to_csv(filename, fields, file_exists, data):
     with open(filename, 'a') as csvfile:
         # creating a csv dict writer object
         writer = csv.DictWriter(csvfile, fieldnames=fields)
@@ -230,7 +240,7 @@ def scrape_christies(year):
             writer.writeheader()  # file doesn't exist yet, write a header
 
         # writing data rows
-        writer.writerows([keyword_dict])
+        writer.writerows([data])
 
 
 CHROMEDRIVER_PATH = "./drivers/chromedriver"
