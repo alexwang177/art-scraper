@@ -174,7 +174,7 @@ def scrape_christies(year):
 
     base_url = "https://www.christies.com/en/results?"
 
-    for month in range(1, 3):
+    for month in range(1, 13):
 
         print(F"\nMONTH {month}\n")
 
